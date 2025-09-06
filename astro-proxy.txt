@@ -1,0 +1,48 @@
+﻿// server.js — AstronomyAPI Proxy Server
+
+
+const express = require("express");
+const fetch = require("node-fetch");
+const cors = require("cors");
+const app = express();
+const port = process.env.PORT || 3001;
+
+
+app.use(cors());
+
+
+// Your AstronomyAPI credentials
+const appId = "512281e1-6801-45b8-a11e-44641d87043a";
+const appSecret = "8cfb266fc0df1f657f61a011bbafbe74ab69e002f467fe48fdb1211b83574907060c0d3b352ad27444c9d60c93260027f6f5b99d435b412775f3e97cbedc58b7d5296fa7868ef2c5af4d6fec59de7ae85def56393c0934ddb8dc786e2118bcde0277502f9bc5eb477db3bd395cfeaa85";
+const base64Auth = Buffer.from(`${appId}:${appSecret}`).toString("base64");
+
+
+// Proxy endpoint for moon events
+app.get("/moon-events", async (req, res) => {
+  const { lat, lon, date } = req.query;
+  if (!lat || !lon || !date) {
+    return res.status(400).json({ error: "Missing lat, lon, or date" });
+  }
+
+
+  const apiUrl = `https://api.astronomyapi.com/api/v2/bodies/events/moon?latitude=${lat}&longitude=${lon}&from_date=${date}`;
+
+
+  try {
+    const response = await fetch(apiUrl, {
+      headers: { Authorization: `Basic ${base64Auth}` }
+    });
+
+
+    const data = await response.json();
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch from AstronomyAPI" });
+  }
+});
+
+
+app.listen(port, () => {
+  console.log(`✅ AstronomyAPI Proxy running on port ${port}`);
+});
